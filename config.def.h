@@ -73,30 +73,30 @@ static unsigned int tabspaces = 8;
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
 	/* 8 normal colors */
-	"#121212",
-	"#EF2929",
-	"#7AD224",
-	"#D4B010",
-	"#4475B4",
-	"#75507B",
-	"#26B8BA",
-	"#D3D7CF",
+	"#101010",
+	"#B02020",
+	"#60C020",
+	"#B0A020",
+	"#3050C0",
+	"#803090",
+	"#10A0B0",
+	"#C0C0C0",
 
 	/* 8 bright colors */
-	"#656763",
-	"#FF4949",
-	"#AAF254",
-	"#FCE94F",
-	"#739FCF",
-	"#AD7FA8",
-	"#34E2E2",
-	"#EEEEEC",
+	"#404040",
+	"#E05050",
+	"#90F050",
+	"#E0D050",
+	"#6080F0",
+	"#B060D0",
+	"#40D0E0",
+	"#F0F0F0",
 
 	[255] = 0,
 
 	/* more colors can be added after 255 to use with DefaultXX */
-	"#C5C9C1",
-	"#121212",
+	"#C0C0C0",
+	"#101010",
 };
 
 /* Use intense basic system colors */
@@ -148,6 +148,10 @@ static MouseShortcut mshortcuts[] = {
 	{ Button5,              XK_NO_MOD,     "\005" },
 };
 
+/*
+ * Ulterior mouse shortcuts.
+ * These ones actually call a function.
+ */
 static MouseShortcut2 mshortcuts2[] = {
     /* button               mask            function        argument */
     { Button4,              ShiftMask,      kscrollup,      {.i =  1} },
