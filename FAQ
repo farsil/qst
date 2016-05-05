@@ -1,4 +1,4 @@
-## Why does st not handle utmp entries?
+## Why does (q)st not handle utmp entries?
 
 Use the excellent tool of [utmp](http://git.suckless.org/utmp/) for this task.
 
@@ -22,12 +22,12 @@ you a list of available terminals, but you’ll most likely switch between xterm
 st or st-256color. The default value for TERM can be changed in config.h
 (TNAME).
 
-## How do I scroll back up?
+## How do I scroll?
 
-Using a terminal multiplexer.
-
-* `st -e tmux` using C-b [
-* `st -e screen` using C-a ESC
+* S-PageUp scrolls up a page
+* S-PageDown scrolls down a page
+* S-ScrollWheelUp scrolls up a line
+* S-ScrollWheelDown scrolls down a line 
 
 ## Why doesn't the Del key work in some programs?
 
