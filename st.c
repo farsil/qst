@@ -1728,33 +1728,24 @@ void
 hpush(int orig)
 {
 	int htop = (term.hbot + term.hlen) % HISTSIZE;
-	Line tmp;
-
-	/* let's save a memcpy, term.line is going to get redrawn */
-	tmp = term.hist[htop];
-	term.hist[htop] = term.line[orig];
-	term.line[orig] = tmp;
 
 	if (term.hlen == HISTSIZE)
 		term.hbot = (term.hbot + 1) % HISTSIZE;
 	else
 		term.hlen++;
+
+	memcpy(term.hist[htop], term.line[orig], term.col * sizeof(Glyph));
 }
 
 void
 hpop(int orig)
 {
-	Line tmp;
-
 	if (term.hlen == 0)
 		return;
 	else
 		term.hlen--;
 
-	/* let's save a memcpy, term.line is going to get redrawn */
-	tmp = term.hist[term.hbot];
-	term.hist[term.hbot] = term.line[orig];
-	term.line[orig] = tmp;
+	memcpy(term.hist[term.hbot], term.line[orig], term.col * sizeof(Glyph));
 }
 
 void
