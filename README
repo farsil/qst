@@ -6,8 +6,12 @@ emulator for X which sucks less.
 
 What's different
 ----------------
-Scrollback support, urxvt's intensityStyles option emulation, my personal
-config.h.
+Scrollback support, rxvt's intensityStyles option emulation.
+
+
+Extras
+------
+My personal config.h, diffs to apply the patch.
 
 
 Requirements
