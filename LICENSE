@@ -1,5 +1,7 @@
 MIT/X Consortium License
 
+Copyright for portions of project st used in qst are held by:
+
 © 2009-2012 Aurélien APTEL <aurelien dot aptel at gmail dot com>
 © 2009 Anselm R Garbe <garbeam at gmail dot com>
 © 2012-2015 Roberto E. Vargas Caballero <k0ga at shike2 dot com>
@@ -11,6 +13,10 @@ MIT/X Consortium License
 © 2013 Michael Forney <mforney at mforney dot org>
 © 2013-2014 Markus Teich <markus dot teich at stusta dot mhn dot de>
 © 2014-2015 Laslo Hunhold <dev at frign dot de>
+
+All other copyright for project qst are held by:
+
+© 2016 Marco Buzzanca <marco dot bzn at gmail dot com>
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
