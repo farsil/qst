@@ -72,7 +72,7 @@ index 27536d2..cc96c83 100644
  #define TRUEBLUE(x)		(((x) & 0xff) << 8)
  
 +#define TLINE(x)		((x) < term.scr ? term.hist[(term.hbot + term.hlen + \
-+               (x) - term.scr) % HISTSIZE] : term.line[(x) - term.scr])
++				(x) - term.scr) % HISTSIZE] : term.line[(x) - term.scr])
  
  enum glyph_attribute {
  	ATTR_NULL       = 0,
