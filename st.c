@@ -1744,8 +1744,6 @@ hpop(int orig)
 		return;
 	else
 		term.hlen--;
-
-	memcpy(term.hist[term.hbot], term.line[orig], term.col * sizeof(Glyph));
 }
 
 void

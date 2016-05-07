@@ -303,8 +303,6 @@ index 27536d2..cc96c83 100644
 +		return;
 +	else
 +		term.hlen--;
-+
-+	memcpy(term.hist[term.hbot], term.line[orig], term.col * sizeof(Glyph));
 +}
 +
 +void
