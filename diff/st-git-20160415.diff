@@ -71,8 +71,8 @@ index 27536d2..cc96c83 100644
  #define TRUEGREEN(x)		(((x) & 0xff00))
  #define TRUEBLUE(x)		(((x) & 0xff) << 8)
  
-+#define TLINE(x)		((x) < term.scr ? term.hist[(term.hbot + term.hlen + (x) - term.scr) % \
-+				HISTSIZE] : term.line[(x) - term.scr])
++#define TLINE(x)		((x) < term.scr ? term.hist[(term.hbot + term.hlen + \
++               (x) - term.scr) % HISTSIZE] : term.line[(x) - term.scr])
  
  enum glyph_attribute {
  	ATTR_NULL       = 0,
@@ -280,11 +280,11 @@ index 27536d2..cc96c83 100644
  
  	/*
  	 * Remember that we are using a pty, which might be a modem line.
-@@ -1691,6 +1725,100 @@ tswapscreen(void)
+@@ -1691,6 +1725,93 @@ tswapscreen(void)
  }
  
  void
-+hpush(int orig)
++hpush(int src)
 +{
 +	int htop = (term.hbot + term.hlen) % HISTSIZE;
 +
@@ -293,16 +293,20 @@ index 27536d2..cc96c83 100644
 +	else
 +		term.hlen++;
 +
-+	memcpy(term.hist[htop], term.line[orig], term.col * sizeof(Glyph));
++	memcpy(term.hist[htop], term.line[src], term.col * sizeof(Glyph));
 +}
 +
 +void
-+hpop(int orig)
++hpop(int dest)
 +{
++	int htop = (term.hbot + term.hlen - 1) % HISTSIZE;
++
 +	if (term.hlen == 0)
 +		return;
 +	else
 +		term.hlen--;
++
++	memcpy(term.line[dest], term.hist[htop], term.col * sizeof(Glyph));
 +}
 +
 +void
@@ -370,7 +374,7 @@ index 27536d2..cc96c83 100644
  tscrolldown(int orig, int n)
  {
  	int i;
-@@ -1766,6 +1894,7 @@ tnewline(int first_col)
+@@ -1766,6 +1887,7 @@ tnewline(int first_col)
  	int y = term.c.y;
  
  	if (y == term.bot) {
@@ -378,7 +382,7 @@ index 27536d2..cc96c83 100644
  		tscrollup(term.top, 1);
  	} else {
  		y++;
-@@ -2872,6 +3001,7 @@ eschandle(uchar ascii)
+@@ -2872,6 +2994,7 @@ eschandle(uchar ascii)
  		return 0;
  	case 'D': /* IND -- Linefeed */
  		if (term.c.y == term.bot) {
@@ -386,15 +390,15 @@ index 27536d2..cc96c83 100644
  			tscrollup(term.top, 1);
  		} else {
  			tmoveto(term.c.x, term.c.y+1);
-@@ -2885,6 +3015,7 @@ eschandle(uchar ascii)
- 		break;
+@@ -2886,6 +3009,7 @@ eschandle(uchar ascii)
  	case 'M': /* RI -- Reverse index */
  		if (term.c.y == term.top) {
-+			hpop(term.bot);
  			tscrolldown(term.top, 1);
++			hpop(term.top);
  		} else {
  			tmoveto(term.c.x, term.c.y-1);
-@@ -3722,7 +3853,8 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
+ 		}
+@@ -3722,7 +3846,8 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
  	}
  
  	/* Change basic system colors [0-7] to bright system colors [8-15] */
@@ -404,7 +408,7 @@ index 27536d2..cc96c83 100644
  		fg = &dc.col[base.fg + 8];
  
  	if (IS_SET(MODE_REVERSE)) {
-@@ -3980,11 +4112,11 @@ drawregion(int x1, int y1, int x2, int y2)
+@@ -3980,11 +4105,11 @@ drawregion(int x1, int y1, int x2, int y2)
  		term.dirty[y] = 0;
  
  		specs = term.specbuf;
@@ -418,7 +422,7 @@ index 27536d2..cc96c83 100644
  			if (new.mode == ATTR_WDUMMY)
  				continue;
  			if (ena_sel && selected(x, y))
-@@ -4004,7 +4136,9 @@ drawregion(int x1, int y1, int x2, int y2)
+@@ -4004,7 +4129,9 @@ drawregion(int x1, int y1, int x2, int y2)
  		if (i > 0)
  			xdrawglyphfontspecs(specs, base, i, ox, y);
  	}
@@ -429,7 +433,7 @@ index 27536d2..cc96c83 100644
  }
  
  void
-@@ -4200,6 +4334,7 @@ cresize(int width, int height)
+@@ -4200,6 +4327,7 @@ cresize(int width, int height)
  	col = (xw.w - 2 * borderpx) / xw.cw;
  	row = (xw.h - 2 * borderpx) / xw.ch;
  
@@ -437,7 +441,7 @@ index 27536d2..cc96c83 100644
  	tresize(col, row);
  	xresize(col, row);
  }
-@@ -4398,6 +4533,7 @@ run:
+@@ -4398,6 +4526,7 @@ run:
  	}
  	setlocale(LC_CTYPE, "");
  	XSetLocaleModifiers("");

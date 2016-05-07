@@ -87,8 +87,8 @@ char *argv0;
 #define TRUEGREEN(x)		(((x) & 0xff00))
 #define TRUEBLUE(x)		(((x) & 0xff) << 8)
 
-#define TLINE(x)		((x) < term.scr ? term.hist[(term.hbot + term.hlen + (x) - term.scr) % \
-				HISTSIZE] : term.line[(x) - term.scr])
+#define TLINE(x)		((x) < term.scr ? term.hist[(term.hbot + term.hlen + \
+				(x) - term.scr) % HISTSIZE] : term.line[(x) - term.scr])
 
 enum glyph_attribute {
 	ATTR_NULL       = 0,
@@ -1725,7 +1725,7 @@ tswapscreen(void)
 }
 
 void
-hpush(int orig)
+hpush(int src)
 {
 	int htop = (term.hbot + term.hlen) % HISTSIZE;
 
@@ -1734,16 +1734,20 @@ hpush(int orig)
 	else
 		term.hlen++;
 
-	memcpy(term.hist[htop], term.line[orig], term.col * sizeof(Glyph));
+	memcpy(term.hist[htop], term.line[src], term.col * sizeof(Glyph));
 }
 
 void
-hpop(int orig)
+hpop(int dest)
 {
+	int htop = (term.hbot + term.hlen - 1) % HISTSIZE;
+
 	if (term.hlen == 0)
 		return;
 	else
 		term.hlen--;
+
+	memcpy(term.line[dest], term.hist[htop], term.col * sizeof(Glyph));
 }
 
 void
@@ -3004,8 +3008,8 @@ eschandle(uchar ascii)
 		break;
 	case 'M': /* RI -- Reverse index */
 		if (term.c.y == term.top) {
-			hpop(term.bot);
 			tscrolldown(term.top, 1);
+			hpop(term.top);
 		} else {
 			tmoveto(term.c.x, term.c.y-1);
 		}
