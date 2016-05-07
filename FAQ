@@ -1,4 +1,4 @@
-## Why does (q)st not handle utmp entries?
+## Why does st not handle utmp entries?
 
 Use the excellent tool of [utmp](http://git.suckless.org/utmp/) for this task.
 

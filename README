@@ -11,7 +11,7 @@ Scrollback support, rxvt's intensityStyles option emulation.
 
 Extras
 ------
-My personal config.h, diffs to apply the patch.
+My personal config.h, diff files.
 
 
 Requirements
@@ -30,7 +30,7 @@ necessary as root):
     make clean install
 
 
-Running (q)st
+Running st
 ----------
 If you did not install st with make clean install, you must compile
 the st terminfo entry with the following command:
