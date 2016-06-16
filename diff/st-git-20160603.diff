@@ -1,0 +1,395 @@
+diff --git a/st.c b/st.c
+index 2594c65..678a6a9 100644
+--- a/st.c
++++ b/st.c
+@@ -87,6 +87,8 @@ char *argv0;
+ #define TRUEGREEN(x)		(((x) & 0xff00))
+ #define TRUEBLUE(x)		(((x) & 0xff) << 8)
+ 
++#define TLINE(x)		((x) < term.scr ? term.hist[(term.hbot + term.hlen + \
++				(x) - term.scr) % HISTSIZE] : term.line[(x) - term.scr])
+ 
+ enum glyph_attribute {
+ 	ATTR_NULL       = 0,
+@@ -228,26 +230,6 @@ typedef struct {
+ 	int narg;              /* nb of args */
+ } STREscape;
+ 
+-/* Internal representation of the screen */
+-typedef struct {
+-	int row;      /* nb row */
+-	int col;      /* nb col */
+-	Line *line;   /* screen */
+-	Line *alt;    /* alternate screen */
+-	int *dirty;  /* dirtyness of lines */
+-	XftGlyphFontSpec *specbuf; /* font spec buffer used for rendering */
+-	TCursor c;    /* cursor */
+-	int top;      /* top    scroll limit */
+-	int bot;      /* bottom scroll limit */
+-	int mode;     /* terminal mode flags */
+-	int esc;      /* escape state flags */
+-	char trantbl[4]; /* charset table translation */
+-	int charset;  /* current charset */
+-	int icharset; /* selected charset for sequence */
+-	int numlock; /* lock numbers in keyboard */
+-	int *tabs;
+-} Term;
+-
+ /* Purely graphic info */
+ typedef struct {
+ 	Display *dpy;
+@@ -324,9 +306,18 @@ typedef struct {
+ 	const Arg arg;
+ } Shortcut;
+ 
++typedef struct {
++	uint b;
++	uint mask;
++	void (*func)(const Arg *);
++	const Arg arg;
++} MouseShortcut2;
++
+ /* function definitions used in config.h */
+ static void clipcopy(const Arg *);
+ static void clippaste(const Arg *);
++static void hscrolldown(const Arg *);
++static void hscrollup(const Arg *);
+ static void numlock(const Arg *);
+ static void selpaste(const Arg *);
+ static void xzoom(const Arg *);
+@@ -340,6 +331,30 @@ static void sendbreak(const Arg *);
+ /* Config.h for applying patches and the configuration. */
+ #include "config.h"
+ 
++/* Internal representation of the screen */
++typedef struct {
++	int row;      /* nb row */
++	int col;      /* nb col */
++	Line *line;   /* screen */
++	Line *alt;    /* alternate screen */
++	Line hist[HISTSIZE]; /* history buffer */
++	int hlen;    /* history length */
++	int hbot;    /* history bottom (least recent) */
++	int scr;      /* scroll back */
++	int *dirty;   /* dirtyness of lines */
++	XftGlyphFontSpec *specbuf; /* font spec buffer used for rendering */
++	TCursor c;    /* cursor */
++	int top;      /* top    scroll limit */
++	int bot;      /* bottom scroll limit */
++	int mode;     /* terminal mode flags */
++	int esc;      /* escape state flags */
++	char trantbl[4]; /* charset table translation */
++	int charset;  /* current charset */
++	int icharset; /* selected charset for sequence */
++	int numlock; /* lock numbers in keyboard */
++	int *tabs;
++} Term;
++
+ /* Font structure */
+ typedef struct {
+ 	int height;
+@@ -485,6 +500,10 @@ static void *xmalloc(size_t);
+ static void *xrealloc(void *, size_t);
+ static char *xstrdup(char *);
+ 
++static void hresize(int);
++static void hpush(int);
++static void hpop(int);
++
+ static void usage(void);
+ 
+ static void (*handler[LASTEvent])(XEvent *) = {
+@@ -731,10 +750,10 @@ tlinelen(int y)
+ {
+ 	int i = term.col;
+ 
+-	if (term.line[y][i - 1].mode & ATTR_WRAP)
++	if (TLINE(y)[i - 1].mode & ATTR_WRAP)
+ 		return i;
+ 
+-	while (i > 0 && term.line[y][i - 1].u == ' ')
++	while (i > 0 && TLINE(y)[i - 1].u == ' ')
+ 		--i;
+ 
+ 	return i;
+@@ -796,7 +815,7 @@ selsnap(int *x, int *y, int direction)
+ 		 * Snap around if the word wraps around at the end or
+ 		 * beginning of a line.
+ 		 */
+-		prevgp = &term.line[*y][*x];
++		prevgp = &TLINE(*y)[*x];
+ 		prevdelim = ISDELIM(prevgp->u);
+ 		for (;;) {
+ 			newx = *x + direction;
+@@ -811,14 +830,14 @@ selsnap(int *x, int *y, int direction)
+ 					yt = *y, xt = *x;
+ 				else
+ 					yt = newy, xt = newx;
+-				if (!(term.line[yt][xt].mode & ATTR_WRAP))
++				if (!(TLINE(yt)[xt].mode & ATTR_WRAP))
+ 					break;
+ 			}
+ 
+ 			if (newx >= tlinelen(newy))
+ 				break;
+ 
+-			gp = &term.line[newy][newx];
++			gp = &TLINE(newy)[newx];
+ 			delim = ISDELIM(gp->u);
+ 			if (!(gp->mode & ATTR_WDUMMY) && (delim != prevdelim
+ 					|| (delim && gp->u != prevgp->u)))
+@@ -839,14 +858,14 @@ selsnap(int *x, int *y, int direction)
+ 		*x = (direction < 0) ? 0 : term.col - 1;
+ 		if (direction < 0) {
+ 			for (; *y > 0; *y += direction) {
+-				if (!(term.line[*y-1][term.col-1].mode
++				if (!(TLINE(*y-1)[term.col-1].mode
+ 						& ATTR_WRAP)) {
+ 					break;
+ 				}
+ 			}
+ 		} else if (direction > 0) {
+ 			for (; *y < term.row-1; *y += direction) {
+-				if (!(term.line[*y][term.col-1].mode
++				if (!(TLINE(*y)[term.col-1].mode
+ 						& ATTR_WRAP)) {
+ 					break;
+ 				}
+@@ -946,6 +965,7 @@ bpress(XEvent *e)
+ {
+ 	struct timespec now;
+ 	MouseShortcut *ms;
++	MouseShortcut2 *ms2;
+ 
+ 	if (IS_SET(MODE_MOUSE) && !(e->xbutton.state & forceselmod)) {
+ 		mousereport(e);
+@@ -960,6 +980,14 @@ bpress(XEvent *e)
+ 		}
+ 	}
+ 
++	for (ms2 = mshortcuts2; ms2 < mshortcuts2 + LEN(mshortcuts2); ms2++) {
++		if (e->xbutton.button == ms2->b
++				&& match(ms2->mask, e->xbutton.state)) {
++			ms2->func(&ms2->arg);
++			return;
++		}
++	}
++
+ 	if (e->xbutton.button == Button1) {
+ 		clock_gettime(CLOCK_MONOTONIC, &now);
+ 
+@@ -1012,13 +1040,13 @@ getsel(void)
+ 		}
+ 
+ 		if (sel.type == SEL_RECTANGULAR) {
+-			gp = &term.line[y][sel.nb.x];
++			gp = &TLINE(y)[sel.nb.x];
+ 			lastx = sel.ne.x;
+ 		} else {
+-			gp = &term.line[y][sel.nb.y == y ? sel.nb.x : 0];
++			gp = &TLINE(y)[sel.nb.y == y ? sel.nb.x : 0];
+ 			lastx = (sel.ne.y == y) ? sel.ne.x : term.col-1;
+ 		}
+-		last = &term.line[y][MIN(lastx, linelen-1)];
++		last = &TLINE(y)[MIN(lastx, linelen-1)];
+ 		while (last >= gp && last->u == ' ')
+ 			--last;
+ 
+@@ -1151,7 +1179,7 @@ selnotify(XEvent *e)
+ 	 * Deleting the property again tells the selection owner to send the
+ 	 * next data chunk in the property.
+ 	 */
+-	XDeleteProperty(xw.dpy, xw.win, (int)property);
++    XDeleteProperty(xw.dpy, xw.win, (int)property);
+ }
+ 
+ void
+@@ -1490,6 +1518,9 @@ ttyread(void)
+ 	/* keep any uncomplete utf8 char for the next call */
+ 	memmove(buf, ptr, buflen);
+ 
++	if (term.scr > 0 && term.scr < HISTSIZE-1)
++		term.scr++;
++
+ 	return ret;
+ }
+ 
+@@ -1499,6 +1530,9 @@ ttywrite(const char *s, size_t n)
+ 	fd_set wfd, rfd;
+ 	ssize_t r;
+ 	size_t lim = 256;
++	Arg arg = (Arg){ .i = term.scr };
++
++	hscrolldown(&arg);
+ 
+ 	/*
+ 	 * Remember that we are using a pty, which might be a modem line.
+@@ -1690,6 +1724,93 @@ tswapscreen(void)
+ }
+ 
+ void
++hpush(int src)
++{
++	int htop = (term.hbot + term.hlen) % HISTSIZE;
++
++	if (term.hlen == HISTSIZE)
++		term.hbot = (term.hbot + 1) % HISTSIZE;
++	else
++		term.hlen++;
++
++	memcpy(term.hist[htop], term.line[src], term.col * sizeof(Glyph));
++}
++
++void
++hpop(int dest)
++{
++	int htop = (term.hbot + term.hlen - 1) % HISTSIZE;
++
++	if (term.hlen == 0)
++		return;
++	else
++		term.hlen--;
++
++	memcpy(term.line[dest], term.hist[htop], term.col * sizeof(Glyph));
++}
++
++void
++hscrolldown(const Arg* a)
++{
++	int n = a->i;
++
++	if (n < 0)
++		n = term.row + n;
++
++	if (n > term.scr)
++		n = term.scr;
++
++	if (term.scr > 0) {
++		term.scr -= n;
++		selscroll(0, -n);
++		tfulldirt();
++	}
++}
++
++void
++hscrollup(const Arg* a)
++{
++	int n = a->i;
++
++	if (n < 0)
++		n = term.row + n;
++
++	if (n > term.hlen - term.scr)
++		n = term.hlen - term.scr;
++
++	if (term.scr < term.hlen) {
++		term.scr += n;
++		selscroll(0, n);
++		tfulldirt();
++	}
++}
++
++void
++hresize(int col)
++{
++	int mincol = MIN(col, term.col);
++	int x, y;
++	Glyph *gp;
++
++	for (y = 0; y < HISTSIZE; y++) {
++		term.hist[y] = xrealloc(term.hist[y], col * sizeof(Glyph));
++
++		for (x = mincol; x < col; x++) {
++			if (selected(x, y) && sel.ob.x != -1) {
++				sel.mode = SEL_IDLE;
++				sel.ob.x = -1;
++			}
++
++			gp = &term.hist[y][x];
++			gp->fg = term.c.attr.fg;
++			gp->bg = term.c.attr.bg;
++			gp->mode = 0;
++			gp->u = ' ';
++		}
++	}
++}
++
++void
+ tscrolldown(int orig, int n)
+ {
+ 	int i;
+@@ -1765,6 +1886,7 @@ tnewline(int first_col)
+ 	int y = term.c.y;
+ 
+ 	if (y == term.bot) {
++		hpush(term.top);
+ 		tscrollup(term.top, 1);
+ 	} else {
+ 		y++;
+@@ -2871,6 +2993,7 @@ eschandle(uchar ascii)
+ 		return 0;
+ 	case 'D': /* IND -- Linefeed */
+ 		if (term.c.y == term.bot) {
++			hpush(term.top);
+ 			tscrollup(term.top, 1);
+ 		} else {
+ 			tmoveto(term.c.x, term.c.y+1);
+@@ -2885,6 +3008,7 @@ eschandle(uchar ascii)
+ 	case 'M': /* RI -- Reverse index */
+ 		if (term.c.y == term.top) {
+ 			tscrolldown(term.top, 1);
++			hpop(term.top);
+ 		} else {
+ 			tmoveto(term.c.x, term.c.y-1);
+ 		}
+@@ -3718,7 +3842,8 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
+ 	}
+ 
+ 	/* Change basic system colors [0-7] to bright system colors [8-15] */
+-	if ((base.mode & ATTR_BOLD_FAINT) == ATTR_BOLD && BETWEEN(base.fg, 0, 7))
++	if (useintensecolors && (base.mode & ATTR_BOLD_FAINT) == ATTR_BOLD &&
++			BETWEEN(base.fg, 0, 7))
+ 		fg = &dc.col[base.fg + 8];
+ 
+ 	if (IS_SET(MODE_REVERSE)) {
+@@ -3976,11 +4101,11 @@ drawregion(int x1, int y1, int x2, int y2)
+ 		term.dirty[y] = 0;
+ 
+ 		specs = term.specbuf;
+-		numspecs = xmakeglyphfontspecs(specs, &term.line[y][x1], x2 - x1, x1, y);
++		numspecs = xmakeglyphfontspecs(specs, &TLINE(y)[x1], x2 - x1, x1, y);
+ 
+ 		i = ox = 0;
+ 		for (x = x1; x < x2 && i < numspecs; x++) {
+-			new = term.line[y][x];
++			new = TLINE(y)[x];
+ 			if (new.mode == ATTR_WDUMMY)
+ 				continue;
+ 			if (ena_sel && selected(x, y))
+@@ -4000,7 +4125,9 @@ drawregion(int x1, int y1, int x2, int y2)
+ 		if (i > 0)
+ 			xdrawglyphfontspecs(specs, base, i, ox, y);
+ 	}
+-	xdrawcursor();
++
++	if (term.scr == 0)
++		xdrawcursor();
+ }
+ 
+ void
+@@ -4196,6 +4323,7 @@ cresize(int width, int height)
+ 	col = (xw.w - 2 * borderpx) / xw.cw;
+ 	row = (xw.h - 2 * borderpx) / xw.ch;
+ 
++	hresize(col);
+ 	tresize(col, row);
+ 	xresize(col, row);
+ }
+@@ -4394,6 +4522,7 @@ run:
+ 	}
+ 	setlocale(LC_CTYPE, "");
+ 	XSetLocaleModifiers("");
++	hresize(MAX(cols, 1));
+ 	tnew(MAX(cols, 1), MAX(rows, 1));
+ 	xinit();
+ 	selinit();
