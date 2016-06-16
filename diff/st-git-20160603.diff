@@ -1,5 +1,5 @@
 diff --git a/st.c b/st.c
-index 2594c65..678a6a9 100644
+index 2594c65..815a6f6 100644
 --- a/st.c
 +++ b/st.c
 @@ -87,6 +87,8 @@ char *argv0;
@@ -195,15 +195,6 @@ index 2594c65..678a6a9 100644
  		while (last >= gp && last->u == ' ')
  			--last;
  
-@@ -1151,7 +1179,7 @@ selnotify(XEvent *e)
- 	 * Deleting the property again tells the selection owner to send the
- 	 * next data chunk in the property.
- 	 */
--	XDeleteProperty(xw.dpy, xw.win, (int)property);
-+	XDeleteProperty(xw.dpy, xw.win, (int)property);
- }
- 
- void
 @@ -1490,6 +1518,9 @@ ttyread(void)
  	/* keep any uncomplete utf8 char for the next call */
  	memmove(buf, ptr, buflen);
