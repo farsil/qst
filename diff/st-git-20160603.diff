@@ -200,7 +200,7 @@ index 2594c65..678a6a9 100644
  	 * next data chunk in the property.
  	 */
 -	XDeleteProperty(xw.dpy, xw.win, (int)property);
-+    XDeleteProperty(xw.dpy, xw.win, (int)property);
++	XDeleteProperty(xw.dpy, xw.win, (int)property);
  }
  
  void
