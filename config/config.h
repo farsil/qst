@@ -5,7 +5,7 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char font[] = "Droid Sans Mono for Powerline:pixelsize=15:antialias=true:autohint=true";
+static char font[] = "Droid Sans Mono for Powerline:pixelsize=14";
 static int borderpx = 2;
 
 /* Size of the scrollback buffer */
