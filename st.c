@@ -86,7 +86,6 @@ char *argv0;
 #define TRUERED(x)		(((x) & 0xff0000) >> 8)
 #define TRUEGREEN(x)		(((x) & 0xff00))
 #define TRUEBLUE(x)		(((x) & 0xff) << 8)
-
 #define TLINE(x)		((x) < term.scr ? term.hist[(term.hbot + term.hlen + \
 				(x) - term.scr) % HISTSIZE] : term.line[(x) - term.scr])
 
@@ -338,8 +337,8 @@ typedef struct {
 	Line *line;   /* screen */
 	Line *alt;    /* alternate screen */
 	Line hist[HISTSIZE]; /* history buffer */
-	int hlen;    /* history length */
-	int hbot;    /* history bottom (least recent) */
+	int hlen;     /* history length */
+	int hbot;     /* history bottom (least recent) */
 	int scr;      /* scroll back */
 	int *dirty;   /* dirtyness of lines */
 	XftGlyphFontSpec *specbuf; /* font spec buffer used for rendering */
