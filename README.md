@@ -17,7 +17,8 @@ necessary as root):
 
 #Running st
 If you did not install st with make clean install, you must compile
-the st terminfo entry with the following command:
+the st terminfo entry with the following command (again, as root if 
+necessary):
 
     tic -s st.info
 
