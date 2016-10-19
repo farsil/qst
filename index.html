@@ -32,8 +32,8 @@
 <a id="qst---quasi-simple-terminal" class="anchor" href="#qst---quasi-simple-terminal" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>qst - quasi simple terminal</h1>
 
 <p>qst is a modified version of <a href="http://st.suckless.org">st</a>, the simple terminal
-emulator for X which sucks less. Compared to plain st it has scrollback 
-support and rxvt's intensityStyles option emulation.</p>
+emulator for X which sucks less. Compared to plain st it has scrollback support
+and rxvt's intensityStyles option emulation.</p>
 
 <h1>
 <a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Requirements</h1>
@@ -43,21 +43,24 @@ support and rxvt's intensityStyles option emulation.</p>
 <h1>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h1>
 
-<p>Edit config.mk to match your local setup (st is installed into
-the <code>/usr/local</code> namespace by default).</p>
+<p>Edit config.mk to match your local setup (st is installed into the <code>/usr/local</code>
+namespace by default).</p>
 
-<p>Afterwards enter the following command to build and install st (if
-necessary as root):</p>
+<p>Afterwards enter the following command to build and install st (if necessary as
+root):</p>
 
 <pre><code>make clean install
 </code></pre>
 
+<p>Note that the provided <code>config.h</code> is different from <code>config.def.h</code> as it
+contains a set of pre-made customizations. Feel free to modify it to your
+liking.</p>
+
 <h1>
 <a id="running-st" class="anchor" href="#running-st" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Running st</h1>
 
-<p>If you did not install st with make clean install, you must compile
-the st terminfo entry with the following command (again, as root if 
-necessary):</p>
+<p>If you did not install st with make clean install, you must compile the st
+terminfo entry with the following command (again, as root if necessary):</p>
 
 <pre><code>tic -s st.info
 </code></pre>
