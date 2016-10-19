@@ -5,7 +5,7 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char font[] = "Droid Sans Mono for Powerline:pixelsize=15";
+static char font[] = "Inconsolata:size=12:antialias=true:autohint=true";
 static int borderpx = 2;
 
 /* Size of the scrollback buffer */
@@ -68,6 +68,21 @@ static int bellvolume = 0;
 /* default TERM value */
 static char termname[] = "st-256color";
 
+/*
+ * spaces per tab
+ *
+ * When you are changing this value, don't forget to adapt the »it« value in
+ * the st.info and appropriately install the st.info in the environment where
+ * you use this st version.
+ *
+ *	it#$tabspaces,
+ *
+ * Secondly make sure your kernel is not expanding tabs. When running `stty
+ * -a` »tab0« should appear. You can tell the terminal to not expand tabs by
+ *  running following command:
+ *
+ *	stty tabs
+ */
 static unsigned int tabspaces = 8;
 
 /* Terminal colors (16 first used in escape sequence) */
@@ -135,28 +150,18 @@ static unsigned int mousebg = 256;
 static unsigned int defaultitalic = 11;
 static unsigned int defaultunderline = 7;
 
-/* Internal shortcuts. */
-#define MODKEY ControlMask 
-
 /*
  * Internal mouse shortcuts.
  * Beware that overloading Button1 will disable the selection.
  */
 static MouseShortcut mshortcuts[] = {
 	/* button               mask            string */
-	{ Button4,              XK_NO_MOD,     "\031" },
-	{ Button5,              XK_NO_MOD,     "\005" },
+	{ Button4,              XK_NO_MOD,      "\031" },
+	{ Button5,              XK_NO_MOD,      "\005" },
 };
 
-/*
- * Ulterior mouse shortcuts.
- * These ones actually call a function.
- */
-static MouseShortcut2 mshortcuts2[] = {
-	/* button               mask            function        argument */
-	{ Button4,              ShiftMask,      hscrollup,      {.i =  1} },
-	{ Button5,              ShiftMask,      hscrolldown,    {.i =  1} },
-};
+/* Internal keyboard shortcuts. */
+#define MODKEY ControlMask
 
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function        argument */
@@ -174,6 +179,13 @@ static Shortcut shortcuts[] = {
 	{ MODKEY,               XK_Num_Lock,    numlock,        {.i =  0} },
 	{ ShiftMask,            XK_Page_Up,     hscrollup,      {.i = -1} },
 	{ ShiftMask,            XK_Page_Down,   hscrolldown,    {.i = -1} },
+};
+
+/* Internal mouse shortcuts with callback. */
+static MouseShortcut2 mshortcuts2[] = {
+	/* button               mask            function        argument */
+	{ Button4,              ShiftMask,      hscrollup,      {.i =  1} },
+	{ Button5,              ShiftMask,      hscrolldown,    {.i =  1} },
 };
 
 /*
@@ -320,6 +332,7 @@ static Key key[] = {
 	{ XK_Delete,        XK_ANY_MOD,     "\033[P",       -1,    0,    0},
 	{ XK_Delete,        XK_ANY_MOD,     "\033[3~",      +1,    0,    0},
 	{ XK_BackSpace,     XK_NO_MOD,      "\177",          0,    0,    0},
+	{ XK_BackSpace,     Mod1Mask,       "\033\177",      0,    0,    0},
 	{ XK_Home,          ShiftMask,      "\033[2J",       0,   -1,    0},
 	{ XK_Home,          ShiftMask,      "\033[1;2H",     0,   +1,    0},
 	{ XK_Home,          XK_ANY_MOD,     "\033[H",        0,   -1,    0},
