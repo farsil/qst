@@ -1,5 +1,5 @@
 {
-  "name": "Qst",
+  "name": "qst",
   "tagline": "qst - quasi simple terminal",
   "body": "#qst - quasi simple terminal\r\nqst is a modified version of [st](http://st.suckless.org), the simple terminal\r\nemulator for X which sucks less. Compared to plain st it has scrollback \r\nsupport and rxvt's intensityStyles option emulation.\r\n\r\n#Requirements\r\nNo other requirements rather than the Xlib header files, as in regular st.\r\n\r\n#Installation\r\nEdit config.mk to match your local setup (st is installed into\r\nthe `/usr/local` namespace by default).\r\n\r\nAfterwards enter the following command to build and install st (if\r\nnecessary as root):\r\n\r\n    make clean install\r\n\r\n#Running st\r\nIf you did not install st with make clean install, you must compile\r\nthe st terminfo entry with the following command (again, as root if \r\nnecessary):\r\n\r\n    tic -s st.info\r\n\r\nSee the man page for additional details.\r\n\r\n#Credits\r\nBased on Aurélien APTEL <aurelien dot aptel at gmail dot com> bt source code.\r\nScrollback implementation inspired by the official upstream patch.\r\n",
   "note": "Don't delete this file! It's used internally to help with page regeneration."
